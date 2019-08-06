@@ -17,10 +17,6 @@ using namespace std;
 class aloneNodeController {
 
 private:
-//    /**
-//     * <视图号，是否为投票节点>
-//     */
-//    static map<int,bool> isVote;
 
     static Config configSettings;
 
@@ -29,8 +25,6 @@ private:
     static vector<Msg*> requestReadyList;
 
     static mutex mtx;
-
-    mutable	std::mutex	m;
 
     static vector<aloneNodeController*> nodes;
 
@@ -70,6 +64,7 @@ private:
 
     int lowLine;
 
+    ////主节点生成的序列号
     int serialNo=1;
 
     ////轮次
@@ -157,7 +152,7 @@ public:
      */
     void dealWithReadyMsg(vector<Msg*>& msgs,int serialNo);
 
-    void dealWithReadyMsg(vector<Msg*>* msgs);
+    void dealWithReadyMsg(vector<Msg*>& msgs);
 
     /**
      * 检查pMsg是否符合要求

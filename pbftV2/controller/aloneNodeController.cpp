@@ -30,11 +30,8 @@ void aloneNodeController::start(Msg *msg) {
             removeHalfNodes();
         }
         aloneNodeController* node=new aloneNodeController();
-//        node->setTimes(node->getTimes() + 1);
         node->setViewNo(msg->getViewNo());
         nodes.push_back(node);
-
-
         putString("本主机当前节点数:"+to_string(nodes.size()));
 
         node->action(msg);
@@ -57,12 +54,7 @@ void aloneNodeController::start(Msg *msg) {
 void aloneNodeController::action(Msg *msg) {
     string msgType=msg->getType();
     if("confirm"==msgType){
-        ////lock
-//        mtx.lock();
         dealWithConfirm(msg);
-
-        ////unlock
-//        mtx.unlock();
     } else if (!isVote&&!isConfirm){
         pushReadMsg(this,msg);
     } else if("request"==msgType){
@@ -168,9 +160,9 @@ void aloneNodeController::dealWithRequest(Msg *request) {
     ppMsg->setContent(request->getContent());
     ppMsg->setSerialNo(serialNo);
 
-    ////使序列号加一
-
     ppMsgList.push_back(serialNo);
+
+    ////使序列号加一
     serialNo+=1;
     times++;
 
@@ -232,24 +224,21 @@ void aloneNodeController::dealWithPMsg(Msg* pMsg) {
 
         ////当已处理的pp消息列表里没有对应的序列号时
         if(!somethingIn(ppMsgList,serialNo)){
-
             putString("因为没有收到的pp消息或者request消息，所以将p消息存入待处理列表,pMsgReadyList的大小"+to_string(pMsgReadyList.size()));
             pMsgReadyList.push_back(pMsg);
                 return;
-
-
         }
-
         putString("p消息第二步验证成功");
-
         for (int i=0;i<times+1;i++){
             putString("pMsg::times="+to_string(times)+"循环到当前的序列号为"+to_string(pTimes[i][0])+"当前消息的序列号为"+to_string(serialNo));
             if (pTimes[i][0]==serialNo){
+
                 int pMsgLength=++pTimes[i][1];
                 putString("收到验证通过的p消息的个数"+to_string(pMsgLength));
                 if(pMsgLength==chooseSize/3*2){
                     putString("收到了足够的p消息");
                     pMsgList.push_back(serialNo);
+
                     Msg* commit=pMsg;
                     commit->setType("commit");
                     sendMsg(commit);
@@ -281,12 +270,8 @@ void aloneNodeController::dealWithCMsg(Msg* commit) {
 
         ////当该序列号对应的p消息没有通过时
         if(!somethingIn(pMsgList,commit->getSerialNo())){
-            putString("将c消息放入待处理列表");
-
-           ;
             cMsgReadyList.push_back(commit);
             putString("因为没有收到足够的p消息，所以将c消息存入待处理列表,cMsgReadyList的大小"+to_string(cMsgReadyList.size()));
-
             return;
         }
 
@@ -319,12 +304,9 @@ void aloneNodeController::dealWithCMsg(Msg* commit) {
  */
 void aloneNodeController::dealWithReadyRequest() {
     cout<<"处理待处理的request消息\n";
-    int count=0;
     for (Msg* request:requestReadyList) {
         this->dealWithRequest(request);
-        count++;
     }
-    putString("执行了"+to_string(count)+"次待处理的request消息");
 }
 
 /**
@@ -342,7 +324,7 @@ void aloneNodeController::dealWithReadyPpMsg(int serialNo) {
  */
 void aloneNodeController::dealWithReadyPpMsg() {
     putString("处理待处理的pp消息");
-    dealWithReadyMsg(&ppMsgReadyList);
+    dealWithReadyMsg(ppMsgReadyList);
 }
 
 /**
@@ -378,31 +360,19 @@ void aloneNodeController::dealWithReadyMsg(vector<Msg*>& msgs,int serialNo) {
             i--;
         }
     }
-
-//    for (Msg* tempMsg:msgs) {
-//        if(tempMsg->getSerialNo()==serialNo){
-//            this->action(tempMsg);
-//            msgs.erase(find(msgs.begin(),msgs.end(),tempMsg));
-//            putString("这里没有出错");
-//        }
-//    }
-
 }
 
 /**
  * 处理待处理消息队列
  * @param msgs
  */
-void aloneNodeController::dealWithReadyMsg(vector<Msg*>* msgs) {
-    putString("需要被处理的消息的个数为"+to_string(msgs->size()));
+void aloneNodeController::dealWithReadyMsg(vector<Msg*>& msgs) {
+    putString("需要被处理的消息的个数为"+to_string(msgs.size()));
 
-
-    for (Msg* tempMsg:*msgs) {
-        if(tempMsg->getSerialNo()==serialNo){
-            this->action(tempMsg);
-            ////删除被处理了的信息
-//            msgs->erase(find(msgs->begin(),msgs->end(),tempMsg));
-        }
+    for (int i = 0; i < msgs.size(); ++i) {
+            action(msgs.at(i));
+            msgs.erase(find(msgs.begin(),msgs.end(),msgs.at(i)));
+            i--;
     }
 
 }
@@ -507,8 +477,6 @@ void aloneNodeController::pushReadMsg(aloneNodeController*node, Msg* msg) {
 
     string msgType = msg->getType();
     putString("因为节点还没有收到确认消息，无法判断自己能否处理，所以把"+msgType+"类型的消息放入待处理列表");
-    ////lock
-    //    mtx.lock();
     if("request"==msgType){
         requestReadyList.push_back(msg);
         putString("request消息已放入待处理列表,当前大小"+to_string(requestReadyList.size()));
@@ -523,8 +491,6 @@ void aloneNodeController::pushReadMsg(aloneNodeController*node, Msg* msg) {
         putString("c消息已放入待处理列表,当前大小"+to_string(node->cMsgReadyList.size()));
     }
 
-    ////unlock
-//    mtx.unlock();
 }
 
 /**
@@ -546,6 +512,7 @@ void aloneNodeController::removeHalfNodes() {
 bool aloneNodeController::checkPpMsg(Msg* ppMsg) {
 
     if (check(ppMsg)){
+        ////检查是否收到重复pp消息
         for (int i = 0; i < ppMsgList.size(); ++i) {
             if (ppMsgList.at(i)==ppMsg->getSerialNo()){
                 return false;
@@ -581,10 +548,7 @@ bool aloneNodeController::checkCMsg(Msg *commit) {
  * @return
  */
 bool aloneNodeController::check(Msg *msg) {
-    string hashCode=getHashCode(msg->getContent());
-
-
-    return msg->getRemark()==hashCode&&msg->getViewNo()==viewNo
+    return msg->getRemark()==getHashCode(msg->getContent())&&msg->getViewNo()==viewNo
            &&msg->getSerialNo()>=lowLine&&msg->getSerialNo()<=highLine;
 }
 
