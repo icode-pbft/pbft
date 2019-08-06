@@ -269,10 +269,6 @@ public:
     static void init(int nodeNo);
 
 
-    static void clearPMsgReadyList(int serialNo);
-
-    static void clearCMsgReadyList(int serialNo);
-
     int getViewNo() const;
 
     void setViewNo(int viewNo);
