@@ -1,0 +1,7 @@
+ipAddress=10.10.10.10
+port=3003
+username=mark
+password=56a1s5d6a
+voteNodeSize=21
+highLine=200
+lowLine=0
