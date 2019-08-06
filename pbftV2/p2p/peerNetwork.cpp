@@ -8,69 +8,68 @@
 #include <WinSock2.h>
 #include <functional>
 #include <string>
+#include <WS2tcpip.h>
 
 #include "peerNetwork.h"
-
 #include "peerThread.h"
-
-using std::cout;
-using std::endl;
-using std::thread;
-using std::string;
 
 
 peerNetwork::peerNetwork() {
-
     this->port = 8015;
-    peerThreads = vector<peerThread>(0);
-    peers = vector<string>(0);
+    peerThreads = std::vector<peerThread>(0);
+    peers = std::vector<std::string>(0);
 }
 
 peerNetwork::peerNetwork(int port) {
     this->port = static_cast<u_short>(port);
-    peerThreads = vector<peerThread>(0);
-    peers = vector<string>(0);
+    peerThreads = std::vector<peerThread>(0);
+    peers = std::vector<std::string>(0);
 }
 
-void peerNetwork::connectToPeer(string host, int port) {
+/**
+ * Establish a connection based on the given IP and port
+ * @param ipAddress
+ * @param port
+ */
+void peerNetwork::connectToPeer(std::string ipAddress, int port) {
     SOCKET clientSocket = socket(AF_INET, SOCK_STREAM, 0);
     if (clientSocket == SOCKET_ERROR) {
-        cout << "peerNetWork line 36: Socket() error: " << WSAGetLastError() << endl;
+        std::cout << "peerNetWork connectToPeer(): Socket() error: " << WSAGetLastError() << std::endl;
         return;
     }
 
     SOCKADDR_IN serverAddr;
     serverAddr.sin_family = AF_INET;
     serverAddr.sin_port = htons(static_cast<u_short>(port));
-    serverAddr.sin_addr.S_un.S_addr = inet_addr(host.data());
+//    serverAddr.sin_addr.S_un.S_addr = inet_addr(host.data());
+    inet_pton(AF_INET, ipAddress.data(), &serverAddr.sin_addr.S_un.S_addr);
 
-    int receiveValue;
-    // 发送连接请求
-    receiveValue = connect(clientSocket, (struct sockaddr *) &serverAddr, sizeof(serverAddr));
+
+
+    int receiveValue = connect(clientSocket, (struct sockaddr *) &serverAddr, sizeof(serverAddr));
 
     if (receiveValue == INVALID_SOCKET) {
-        cout << "peerNetWork line 50: socket " << host << ":" << port << " can't connected." << WSAGetLastError() << endl;
+        std::cout << "peerNetWork connectToPeer(): socket " << ipAddress << ":" << port << " can't connected." << WSAGetLastError() << std::endl;
         return;
     } else {
-        cout << "\npeerNetWork line 53: socket " << host << ":" << port << " connected.\n" << endl;
-        peers.emplace_back(host + ":" + std::to_string(port));
+        std::cout << "\npeerNetWork connectToPeer(): socket " << ipAddress << ":" << port << " connected.\n" << std::endl;
+        peers.emplace_back(ipAddress + ":" + std::to_string(port));
 
-        peerThread pt = peerThread(clientSocket, serverAddr);
-
-//        thread ptThread(&peerThread::run, std::ref(pt));
-        thread ptThread(&peerThread::run, pt);
-
+        peerThread pt = peerThread(clientSocket, ipAddress);
+        std::thread ptThread(&peerThread::run, pt);
         ptThread.detach();
-
-//        peerThreads.emplace_back(pt);
+        peerThreads.emplace_back(pt);
     }
 }
 
+/**
+ * Listen on port 8015 as a server
+ */
 void peerNetwork::run() {
     SOCKET serverSocket = socket(AF_INET, SOCK_STREAM, 0);
 
     if (serverSocket == SOCKET_ERROR) {
-        cout << "peerNetWork line 69: Socket() error: " << WSAGetLastError() << endl;
+        std::cout << "peerNetWork run(): Socket() error: " << WSAGetLastError() << std::endl;
         return;
     }
 
@@ -88,8 +87,7 @@ void peerNetwork::run() {
     // socket绑定端口
     receiveValue = bind(serverSocket, (struct sockaddr *) &serverAddr, sizeof(SOCKADDR_IN));
     if (receiveValue == SOCKET_ERROR) {
-        cout << "peerNetWork line 87: Failed bind: " << WSAGetLastError() << endl;
-        cout << "peerNetWork line 88: 绑定端口失败，可能已被占用： " << WSAGetLastError() << endl;
+        std::cout << "peerNetWork run(): port binding failed: " << WSAGetLastError() << std::endl;
         return;
     }
 
@@ -97,11 +95,11 @@ void peerNetwork::run() {
     // 第二个参数backlog还不知道是什么意思
     receiveValue = listen(serverSocket, 10);
     if (receiveValue == SOCKET_ERROR) {
-        cout << "peerNetWork line 96: Failed listen: " << WSAGetLastError() << endl;
-        cout << "peerNetWork line 97: 监听端口失败： " << WSAGetLastError() << endl;
+        std::cout << "peerNetWork run(): listening port failed： " << WSAGetLastError() << std::endl;
         return;
     }
 
+    std::cout << "start listening :" + std::to_string(port) << std::endl;
     while (runFlag) {
         // 监听成功，等待Client端连接
         SOCKADDR_IN clientAddr;
@@ -109,25 +107,29 @@ void peerNetwork::run() {
         SOCKET connectSocket = accept(serverSocket, (SOCKADDR *) &clientAddr, &lenSOCKADDR);
 
         if (connectSocket == SOCKET_ERROR) {
-            cout << "peerNetWork line 108: Failed accept: " << WSAGetLastError() << endl;
-            cout << "peerNetWork line 109: Accept失败： " << WSAGetLastError() << endl;
+            std::cout << "peerNetWork run(): failed accept: " << WSAGetLastError() << std::endl;
+            std::cout << "peerNetWork run(): accept failed： " << WSAGetLastError() << std::endl;
         }
+        char ipAddress[16] = {0};
+        inet_ntop(AF_INET, &clientAddr.sin_addr, ipAddress, sizeof(ipAddress));
+        std::cout << "\npeerNetWork run(): accept client IP: " << ipAddress << "\n"<< std::endl;
 
-        cout << "\npeerNetWork line 112: Accept client IP: " << inet_ntoa(clientAddr.sin_addr) << "\n"<< endl;
-
-
-        peerThread peerThread1 = peerThread(connectSocket, clientAddr);
+        peerThread peerThread1 = peerThread(connectSocket, ipAddress);
         peerThreads.emplace_back(peerThread1);
-        cout << peerThreads.size() << endl;
-//        thread ptThread(&peerThread::run, std::ref(peerThread1));
-        thread ptThread(&peerThread::run, peerThread1);
+
+        std::cout<< "peerNetWork run(): number of accepted connection: " <<peerThreads.size() << std::endl;
+        std::thread ptThread(&peerThread::run, peerThread1);
         ptThread.detach();
     }
 }
 
-void peerNetwork::broadcast(string data) {
+/**
+ * Broadcast messages to all clients
+ * @param data will sent
+ */
+void peerNetwork::broadcast(const std::string& data) {
     for (auto pt: peerThreads) {
-        cout << "sent: " << data << endl;
+        std::cout << "peerNetWork run(): sent: " << data << std::endl;
         pt.send(data);
     }
 }

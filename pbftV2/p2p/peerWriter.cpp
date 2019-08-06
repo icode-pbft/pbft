@@ -7,71 +7,65 @@
 #include <mutex>
 
 #include "peerWriter.h"
-#include "../utils/commonUtils.h"
 
-std::map<string ,std::queue<string>> peerWriter::writeMap;
+std::map<std::string ,std::deque<std::string>> peerWriter::writeMap;
 std::mutex peerWriter::writeMapMutex;
 
-peerWriter::peerWriter(SOCKET clientSocket, SOCKADDR_IN serverAddr) {
-    this->clientSocket = clientSocket;
-    this->serverAddr = serverAddr;
+peerWriter::peerWriter() {}
+
+peerWriter::peerWriter(SOCKET clientSocket, const std::string &ipAddress) : clientSocket(clientSocket),
+                                                                       ipAddress(ipAddress) {
+    std::deque<std::string> writeQueue;
+    peerWriter::writeMap[this->ipAddress] = writeQueue;
 }
 
+/**
+ * Listen for a message in the write buffer, if so, take it out and send it
+ */
 void peerWriter::run() {
-    while (runFlag) {
+    while (true) {
         std::string sendMsg;
 
+        // Reads the first element in the message queue and pops it
         writeMapMutex.lock();
-        if (!peerWriter::writeMap[this->fileName].empty()) {
-//            std::lock_guard<std::mutex> lcg(writeMapMutex);
-            sendMsg=peerWriter::writeMap[this->fileName].front();
-            peerWriter::writeMap[this->fileName].pop();
+        if (!peerWriter::writeMap[this->ipAddress].empty()) {
+            sendMsg = peerWriter::writeMap[this->ipAddress].front();
+            peerWriter::writeMap[this->ipAddress].pop_front();
         }
         writeMapMutex.unlock();
-        // todo:改成读取map中的队列第一个消息
-//        commonUtils::readLineFile(fileName, sendMsg);
 
         if (!sendMsg.empty()) {
             sendMsg += "\r\n";
             if (send(clientSocket, sendMsg.data(), static_cast<int>(sendMsg.size()), 0) < 0) {
-                std::cout << "sending ERROR!!! -->send " + sendMsg + " to " +  inet_ntoa(serverAddr.sin_addr) << std::endl;
+                std::cout << "sending ERROR!!! -->send " + sendMsg + " to " + ipAddress << std::endl;
+                break;
             } else {
-                std::cout << "sending success -->send " + sendMsg + " to " +  inet_ntoa(serverAddr.sin_addr) << std::endl;
+                std::cout << "sending success -->send " + sendMsg + " to " + ipAddress << std::endl;
             }
             sendMsg = "";
-            //todo:将清空文件内容改成弹出第一个消息
-//            std::ofstream fileout(fileName, std::ios::out | std::ios::trunc);
-//            fileout.close();
         }
 
         // todo:线程沉睡
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
 
-    cout << "Peer " << inet_ntoa(serverAddr.sin_addr) << " disconnected.";
+    std::cout << "peerWriter run():Peer " << ipAddress << " disconnected." << std::endl;
 }
 
 /**
- * 发送消息
+ * Messages to be sent are saved to the buffer
  */
-void peerWriter::write(string msg) {
-    //todo:改写为存入map中队列的末尾
-//    commonUtils::writeToFile(fileName, msg, std::ios::out | std::ios::trunc);
-//    存入map中队列的末尾
+void peerWriter::write(std::string msg) {
+    // Save the message to the end of the queue
     writeMapMutex.lock();
-    peerWriter::writeMap[this->fileName].push(msg);
+    std::deque<std::string> &temp = peerWriter::writeMap[this->ipAddress];
+    if (std::find(temp.begin(), temp.end(), msg) == temp.end() || temp.empty()) {
+        temp.push_back(msg);
+    }
     writeMapMutex.unlock();
 }
 
-peerWriter::peerWriter() {}
 
-/**
- *构造函数 初始时即给static map赋予key值
- */
-peerWriter::peerWriter(SOCKET clientSocket, const SOCKADDR_IN &serverAddr, const string &fileName) : clientSocket(
-        clientSocket), serverAddr(serverAddr), fileName(fileName) {
-    std::queue<string> writeQueue;
-    peerWriter::writeMap[this->fileName]=writeQueue;
-}
+
 
 

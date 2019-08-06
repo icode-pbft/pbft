@@ -10,29 +10,24 @@
 #include "peerWriter.h"
 #include "peerReader.h"
 
-using std::cout;
-using std::endl;
-
 class peerThread {
 private:
     SOCKET clientSocket;
-    SOCKADDR_IN serverAddr;
 
 public:
-    // = ip
     // ex: 192.168.10.10
-    std::string fileName;
+    std::string ipAddress;
     peerWriter peerWriter1 = peerWriter();
     peerReader peerReader1 = peerReader();
 
 public:
     peerThread();
 
-    peerThread(SOCKET clientSocket, const SOCKADDR_IN &serverAddr);
+    peerThread(SOCKET clientSocket, const std::string &ipAddress);
 
     void run();
 
-    void send(string data);
+    void send(std::string data);
 };
 
 

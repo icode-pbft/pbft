@@ -10,37 +10,31 @@
 
 #include "peerThread.h"
 
-using std::string;
-using std::vector;
-
 /**
  * P2P网络，负责处理peer之间的通信
  */
 class peerNetwork {
 
 private:
+    /** listening port */
     int port;
     bool runFlag = true;
 
 public:
-    vector<peerThread> peerThreads;
-    vector<string> peers;
+    /** a collection of clients that have established a connection */
+    std::vector<peerThread> peerThreads;
+    /** a collection of client information for which a connection has been established */
+    std::vector<std::string> peers;
 
-    /**
-     * 默认配置
-     */
     peerNetwork();
 
     explicit peerNetwork(int port);
 
-    /**
-     * 建立连接
-     */
-    void connectToPeer(string host, int port);
+    void connectToPeer(std::string ipAddress, int port);
 
     void run();
 
-    void broadcast(string data);
+    void broadcast(const std::string& data);
 };
 
 

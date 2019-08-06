@@ -11,41 +11,27 @@
 #include <queue>
 #include <map>
 #include <mutex>
-using std::string;
-using std::vector;
-using std::cout;
-using std::endl;
-
 
 class peerWriter {
 private:
     SOCKET clientSocket;
-    SOCKADDR_IN serverAddr;
-    //fileName=Ip
-    std::string fileName;
+    std::string ipAddress;
 public:
     /**
-     * 2019??8??3??09:59:00 ?????§Õ???map<>???key?IP,value???????§µ?????§Õ?????
-     * */
-    static std::map<std::string ,std::queue<std::string>> writeMap;
+     * key = ip
+     * value = the queue on which the message is sent
+     */
+    static std::map<std::string ,std::deque<std::string>> writeMap;
 
     static std::mutex writeMapMutex;
-private:
-
-    // todo: ?????
-    vector<string> outputBuffer = vector<string>(0);
-
-    bool runFlag = true;
 public:
     peerWriter();
 
-    peerWriter(SOCKET clientSocket, SOCKADDR_IN serverAddr);
-    //??????
-    peerWriter(SOCKET clientSocket, const SOCKADDR_IN &serverAddr, const string &fileName);
+    peerWriter(SOCKET clientSocket, const std::string &ipAddress);
+
     void run();
 
-    void write(string msg);
-
+    void write(std::string msg);
 };
 
 
