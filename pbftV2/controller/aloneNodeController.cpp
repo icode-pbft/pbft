@@ -51,7 +51,7 @@ void aloneNodeController::start(Msg *msg) {
  */
 void aloneNodeController::action(Msg *msg) {
     string msgType=msg->getType();
-    if("confirm"==msgType){
+    if("confirm"==msgType&&!isConfirm){
         dealWithConfirm(msg);
     } else if (!isVote&&!isConfirm){
         pushReadMsg(this,msg);
