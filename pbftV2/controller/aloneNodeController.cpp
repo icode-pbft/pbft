@@ -17,8 +17,6 @@ const int aloneNodeController::nodeSizeMax=100;
  * @param msg
  */
 void aloneNodeController::start(Msg *msg) {
-
-
     ////lock
     mtx.lock();
     int index=nodeIn(nodes,msg->getViewNo());
@@ -150,7 +148,9 @@ void aloneNodeController::dealWithRequest(Msg *request) {
     }
     requestList.push_back(request->getContent());
     putString("处理request消息");
-    ////初始化pTims和cTimes；
+
+
+    ////主节点初始化pTims和cTimes；
     putString("初始化pTims和cTimes");
     pTimes[times][0]=serialNo;
     cTimes[times][0]=serialNo;
@@ -160,6 +160,7 @@ void aloneNodeController::dealWithRequest(Msg *request) {
     ppMsg->setContent(request->getContent());
     ppMsg->setSerialNo(serialNo);
 
+    ////向已处理pp消息列表中添加主节点（自己）发出的pp消息的序列号
     ppMsgList.push_back(serialNo);
 
     ////使序列号加一
@@ -170,9 +171,10 @@ void aloneNodeController::dealWithRequest(Msg *request) {
     sendMsg(ppMsg);
     dealWithReadyPMsg(serialNo-1);
 
-    Msg* pMsg=ppMsg;
-    pMsg->setType("pMsg");
-    sendMsg(pMsg);
+    //主节点不发p消息
+//    Msg* pMsg=ppMsg;
+//    pMsg->setType("pMsg");
+//    sendMsg(pMsg);
 
 }
 
@@ -190,12 +192,12 @@ void aloneNodeController::dealWithPpMsg(Msg* ppMsg) {
         ////记录序列号
         int serialNo=ppMsg->getSerialNo();
 
-        ////初始化pTims和cTimes；
+        ////给主节点初始化pTims和cTimes；
         pTimes[times][0]=serialNo;
         cTimes[times][0]=serialNo;
         times++;
 
-        ////将序列号放入已处理的pp消息列表里
+        ////非主节点将序列号放入已处理的pp消息列表里
         ppMsgList.push_back(ppMsg->getSerialNo());
 
         Msg* pMsg=ppMsg;
@@ -229,28 +231,22 @@ void aloneNodeController::dealWithPMsg(Msg* pMsg) {
                 return;
         }
         putString("p消息第二步验证成功");
-        for (int i=0;i<times+1;i++){
-            putString("pMsg::times="+to_string(times)+"循环到当前的序列号为"+to_string(pTimes[i][0])+"当前消息的序列号为"+to_string(serialNo));
-            if (pTimes[i][0]==serialNo){
 
-                int pMsgLength=++pTimes[i][1];
-                putString("收到验证通过的p消息的个数"+to_string(pMsgLength));
-                if(pMsgLength==chooseSize/3*2){
-                    putString("收到了足够的p消息");
-                    pMsgList.push_back(serialNo);
+        ////将通过两步验证的p消息放入记录
+        pMsgNodeNos.push_back(to_string(pMsg->getSerialNo())+"&"+to_string(pMsg->getNodeNo()));
 
-                    Msg* commit=pMsg;
-                    commit->setType("commit");
-                    sendMsg(commit);
+        ////计算同一序列号的p消息是否收到了2f个
+        if(countMsg(pMsgNodeNos,pMsg->getSerialNo())==(chooseSize-1)/3*2){
+            putString("收到了足够的p消息");
+            pMsgList.push_back(serialNo);
+            Msg* commit=pMsg;
+            commit->setType("commit");
+            sendMsg(commit);
 
-                    ////处理待处理的commit消息
-                    putString("开始处理c消息");
-                    dealWithReadyCMsg(serialNo);
-                }
-                return;
-            }
+            ////处理待处理的commit消息
+            putString("开始处理c消息");
+            dealWithReadyCMsg(serialNo);
         }
-
     }
 }
 
@@ -277,24 +273,19 @@ void aloneNodeController::dealWithCMsg(Msg* commit) {
 
         putString("c消息第二步验证成功");
 
-        for (int i=0;i<times+1;i++){
-            putString("commit::循环当前序列号为"+to_string(cTimes[i][0])+"当前消息的序列号为"+to_string(commit->getSerialNo()));
-            if (cTimes[i][0]==serialNo){
-                int cMsgLength=++cTimes[i][1];
-                putString("收到验证通过的c消息的个数"+to_string(cMsgLength)+"    cMsgLength==chooseSize? :"+to_string(cMsgLength==chooseSize/3*2));
-                if(cMsgLength==chooseSize/3*2){
-                    cMsgList.push_back(commit->getSerialNo());
-                    Msg*reply=commit;
-                    reply->setType("reply");
-                    reply->setResult(true);
-                    reply->setNodeNo(nodeNo);
-                    reply->setSystemId(systemId);
-                    sendReply(reply);
-                }
-                return;
-            }
-        }
+        ////将通过两步验证的c消息放入记录
+        cMsgNodeNos.push_back(to_string(commit->getSerialNo())+"&"+to_string(commit->getNodeNo()));
 
+        ////计算同一序列号的c消息是否收到了2f个
+        if(countMsg(cMsgNodeNos,commit->getSerialNo())==(chooseSize-1)/3*2){
+            cMsgList.push_back(commit->getSerialNo());
+            Msg*reply=commit;
+            reply->setType("reply");
+            reply->setResult(true);
+            reply->setNodeNo(nodeNo);
+            reply->setSystemId(systemId);
+            sendReply(reply);
+        }
     }
 }
 
@@ -530,7 +521,10 @@ bool aloneNodeController::checkPpMsg(Msg* ppMsg) {
  * @return
  */
 bool aloneNodeController::checkPMsg(Msg* pMsg) {
-    return check(pMsg);
+    return check(pMsg)&&!somethingIn(pMsgNodeNos,
+            to_string(pMsg->getSerialNo())+"&"+to_string(pMsg->getNodeNo()));
+
+
 }
 
 /**
@@ -539,7 +533,9 @@ bool aloneNodeController::checkPMsg(Msg* pMsg) {
  * @return
  */
 bool aloneNodeController::checkCMsg(Msg *commit) {
-    return check(commit);
+    return check(commit)&&!somethingIn(cMsgNodeNos,
+            to_string(commit->getSerialNo())+"&"+to_string(commit->getNodeNo()));
+
 }
 
 /**
@@ -580,13 +576,48 @@ void aloneNodeController::getMsg(Msg *msg,int nodeNo) {
 }
 
 /**
- * 无参构造方法
+ * 无参构造函数
  */
 aloneNodeController::aloneNodeController() {
 
 }
 
+/**
+ * 析构函数
+ */
+aloneNodeController::~aloneNodeController() {
+    deleteMsg(ppMsgReadyList);
+    deleteMsg(pMsgReadyList);
+    deleteMsg(cMsgReadyList);
+}
+
 void aloneNodeController::putString(string msg) {
     cout<<msg+"\n";
+}
+
+/**
+ * delete msg
+ * @param msgs
+ */
+void aloneNodeController::deleteMsg(vector<Msg *> msgs) {
+    for (Msg* msg:msgs) {
+        delete msg;
+    }
+}
+
+/**
+ *
+ * @param ve
+ * @param serialNo
+ * @return
+ */
+int aloneNodeController::countMsg(vector<string> ve, int serialNo) {
+    int count=0;
+    for (string str:ve) {
+        if(to_string(serialNo)==str.substr(0,str.find("&"))){
+            count++;
+        }
+    }
+    return count;
 }
 

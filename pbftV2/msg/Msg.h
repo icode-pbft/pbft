@@ -50,7 +50,7 @@ public:
 
     Msg(const string &type, int viewNo, const string &content,const string &remark);
 
-    Msg(int viewNo, int serialNo, const string &content,const string &type,const string &remark);
+    Msg(int viewNo, int serialNo, const string &content,const string &type,const string &remark,int nodeNo);
 
     Msg(int viewNo, int serialNo, int nodeNo, bool result,const string &type);
 
@@ -62,9 +62,9 @@ public:
 
     static Msg* createConfirm(int viewNo,int systemId,vector<int> chooseNodes,int mainNode);
     static Msg* createRequest(string content,int viewNo);
-    static Msg* createPpMsg(string content,int serialNo,int viewNo);
-    static Msg* createPMsg(string content,int serialNo,int viewNo);
-    static Msg* createCMsg(string content,int serialNo,int viewNo);
+    static Msg* createPpMsg(string content,int serialNo,int viewNo,int nodeNo);
+    static Msg* createPMsg(string content,int serialNo,int viewNo,int nodeNo);
+    static Msg* createCMsg(string content,int serialNo,int viewNo,int nodeNo);
     static Msg* createReply(bool result,int serialNo,int viewNo,int nodeNo);
 
     ////getter&setter

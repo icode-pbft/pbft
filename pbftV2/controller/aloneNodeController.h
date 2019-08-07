@@ -18,18 +18,20 @@ class aloneNodeController {
 
 private:
 
+    ////配置文件读取
     static Config configSettings;
-
+    ////主机编号
     static int nodeNo;
-
+    ////request请求列表
     static vector<Msg*> requestReadyList;
-
+    ////锁
     static mutex mtx;
-
+    ////主机节点列表
     static vector<aloneNodeController*> nodes;
-
     ////指定当前节点最多有多少个处理节点
     static const int nodeSizeMax;
+
+
 
     ////通过request的content
     vector<string> requestList;
@@ -43,12 +45,16 @@ private:
     int pTimes[6][2]={0};
     ////p消息队列
     vector<int> pMsgList;
+    ////记录p消息来自哪个主机,内容是序列号+“&”+主机号
+    vector<string> pMsgNodeNos;
     ////p消息待处理队列
     vector<Msg*> pMsgReadyList;
     ////记录对应序列号收到的c消息的个数
     int cTimes[6][2]={0};
     ////c消息队列
     vector<int> cMsgList;
+    ////记录c消息来自哪个主机，内容是序列号+“&”+主机号
+    vector<string> cMsgNodeNos;
     ////c消息待处理队列
     vector<Msg*> cMsgReadyList;
     ////是否为主节点
@@ -76,6 +82,9 @@ private:
 public:
 
     aloneNodeController();
+
+    ~aloneNodeController();
+
 
     /**
     * 启动方法
@@ -268,7 +277,6 @@ public:
      */
     static void init(int nodeNo);
 
-
     int getViewNo() const;
 
     void setViewNo(int viewNo);
@@ -286,7 +294,19 @@ public:
     static void getMsg(Msg* msg,int nodeNo);
 
 
+    /**
+     * 输出
+     * @param msg
+     */
     static void putString(string msg);
+
+    /**
+     *
+     * @param msgs
+     */
+    void deleteMsg(vector<Msg*> msgs);
+
+    int countMsg(vector<string> ve,int serialNo);
 
 };
 

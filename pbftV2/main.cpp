@@ -65,21 +65,21 @@ int threadTest1() {
     aloneNodeController::init(1);
     Msg* confirm=Msg::createConfirm(1,11,{1,2,3,4},2);
     Msg* request=Msg::createRequest("123",1);
-    Msg* ppMsg1_1=Msg::createPpMsg("123",1,1);
-    Msg* pMsg1_1=Msg::createPMsg("123",1,1);
-    Msg* pMsg1_2=Msg::createPMsg("123",1,1);
-    Msg* pMsg1_3=Msg::createPMsg("123",1,1);
-    Msg* cMsg1_1=Msg::createCMsg("123",1,1);
-    Msg* cMsg1_2=Msg::createCMsg("123",1,1);
-    Msg* cMsg1_3=Msg::createCMsg("123",1,1);
+    Msg* ppMsg1_1=Msg::createPpMsg("123",1,1,2);
+    Msg* pMsg1_1=Msg::createPMsg("123",1,1,2);
+    Msg* pMsg1_2=Msg::createPMsg("123",1,1,3);
+    Msg* pMsg1_3=Msg::createPMsg("123",1,1,4);
+    Msg* cMsg1_1=Msg::createCMsg("123",1,1,2);
+    Msg* cMsg1_2=Msg::createCMsg("123",1,1,3);
+    Msg* cMsg1_3=Msg::createCMsg("123",1,1,4);
     Msg* request1=Msg::createRequest("1234",1);
-    Msg* ppMsg2_1=Msg::createPpMsg("123",2,1);
-    Msg* pMsg2_1=Msg::createPMsg("1234",2,1);
-    Msg* pMsg2_2=Msg::createPMsg("1234",2,1);
-    Msg* pMsg2_3=Msg::createPMsg("1234",2,1);
-    Msg* cMsg2_1=Msg::createCMsg("1234",2,1);
-    Msg* cMsg2_2=Msg::createCMsg("1234",2,1);
-    Msg* cMsg2_3=Msg::createCMsg("1234",2,1);
+    Msg* ppMsg2_1=Msg::createPpMsg("123",2,1,2);
+    Msg* pMsg2_1=Msg::createPMsg("1234",2,1,2);
+    Msg* pMsg2_2=Msg::createPMsg("1234",2,1,3);
+    Msg* pMsg2_3=Msg::createPMsg("1234",2,1,4);
+    Msg* cMsg2_1=Msg::createCMsg("1234",2,1,2);
+    Msg* cMsg2_2=Msg::createCMsg("1234",2,1,3);
+    Msg* cMsg2_3=Msg::createCMsg("1234",2,1,4);
 
 
 
@@ -129,6 +129,10 @@ int threadTest1() {
 
 int main(){
     threadTest1();
+
+
+
+    return 0;
 
 //    vector<int> test;
 //    for (int j = 0; j <5 ; ++j) {

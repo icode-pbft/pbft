@@ -162,7 +162,12 @@ Msg::Msg(int viewNo, const vector<int> &chooseNodes, int mainNode, int systemId,
  * @param content
  * @param type
  */
-Msg::Msg(int viewNo, int serialNo, const string &content,const string &type,const string &remark) : viewNo(viewNo), serialNo(serialNo), content(content), type(type),remark(remark){}
+Msg::Msg(int viewNo, int serialNo, const string &content,const string &type,const string &remark,int nodeNo) : viewNo(viewNo),
+serialNo(serialNo),
+content(content),
+type(type),
+remark(remark),
+nodeNo(nodeNo){}
 
 
 /**
@@ -201,16 +206,16 @@ Msg *Msg::createRequest(string content, int viewNo) {
     return new Msg("request",viewNo,content,getHashCode(content));
 }
 
-Msg *Msg::createPpMsg(string content, int serialNo, int viewNo) {
-    return new Msg(viewNo,serialNo,content,"ppMsg",getHashCode(content));
+Msg *Msg::createPpMsg(string content, int serialNo, int viewNo,int nodeNo) {
+    return new Msg(viewNo,serialNo,content,"ppMsg",getHashCode(content),nodeNo);
 }
 
-Msg *Msg::createPMsg(string content, int serialNo, int viewNo) {
-    return new Msg(viewNo,serialNo,content,"pMsg",getHashCode(content));
+Msg *Msg::createPMsg(string content, int serialNo, int viewNo,int nodeNo) {
+    return new Msg(viewNo,serialNo,content,"pMsg",getHashCode(content),nodeNo);
 }
 
-Msg *Msg::createCMsg(string content, int serialNo, int viewNo) {
-    return new Msg(viewNo,serialNo,content,"commit",getHashCode(content));
+Msg *Msg::createCMsg(string content, int serialNo, int viewNo,int nodeNo) {
+    return new Msg(viewNo,serialNo,content,"commit",getHashCode(content),nodeNo);
 }
 
 Msg *Msg::createReply(bool result, int serialNo, int viewNo, int nodeNo) {

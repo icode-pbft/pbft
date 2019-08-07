@@ -23,5 +23,15 @@ Mytest::Mytest() {
     mtx.lock();
     i++;
     cout<<"****"<<i<<endl;
+    ve.push_back(new Msg());
+    ve.push_back(new Msg());
+    ve.push_back(new Msg());
     mtx.unlock();
+}
+
+Mytest::~Mytest() {
+    cout<<"awsl\n";
+    for (Msg* msg:ve) {
+        delete msg;
+    }
 }

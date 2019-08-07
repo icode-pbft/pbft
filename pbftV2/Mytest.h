@@ -7,16 +7,30 @@
 
 #include <mutex>
 #include <iostream>
+#include <vector>
+#include "msg/Msg.h"
+
 using namespace std;
 
 class Mytest {
 private:
     static mutex mtx;
     static int i;
+
 public:
+    vector<Msg*> ve;
     static const mutex &getMtx();
 
     Mytest();
+
+    ~Mytest();
+
+    void test1(){
+        for (Msg* msg:ve) {
+            delete msg;
+        }
+    }
+
 
     static int getI();
 
