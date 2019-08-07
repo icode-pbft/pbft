@@ -8,13 +8,13 @@
 
 #include "peerWriter.h"
 
-std::map<std::string ,std::deque<std::string>> peerWriter::writeMap;
+std::map<std::string, std::deque<std::string>> peerWriter::writeMap;
 std::mutex peerWriter::writeMapMutex;
 
 peerWriter::peerWriter() {}
 
 peerWriter::peerWriter(SOCKET clientSocket, const std::string &ipAddress) : clientSocket(clientSocket),
-                                                                       ipAddress(ipAddress) {
+                                                                            ipAddress(ipAddress) {
     std::deque<std::string> writeQueue;
     writeMapMutex.lock();
     if (peerWriter::writeMap.count(this->ipAddress) == 0) {
@@ -49,7 +49,7 @@ void peerWriter::run() {
             sendMsg = "";
         }
 
-        // todo:线程沉睡
+        // todo:�̳߳�˯
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
 
@@ -62,11 +62,7 @@ void peerWriter::run() {
 void peerWriter::write(std::string msg) {
     // Save the message to the end of the queue
     writeMapMutex.lock();
-    std::deque<std::string> &temp = peerWriter::writeMap[this->ipAddress];
-    //
-    if (std::find(temp.begin(), temp.end(), msg) == temp.end() || temp.empty()) {
-        temp.push_back(msg);
-    }
+    peerWriter::writeMap[this->ipAddress].push_back(msg);
     writeMapMutex.unlock();
 }
 

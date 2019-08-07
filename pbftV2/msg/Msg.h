@@ -56,7 +56,7 @@ public:
 
     Json::Value toJsonValue();
     string toJsonStr();
-    Msg* fromJson(const string& itemStr);
+    static Msg* fromJson(const string& itemStr);
 
     static string getHashCode(string content);
 

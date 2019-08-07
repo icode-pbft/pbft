@@ -13,7 +13,6 @@
 #include "controller/aloneNodeController.h"
 #include "utils/commonUtils.h"
 
-// ???8015?????????
 int port = 8015;
 std::string ipPrefix = "10.25.15.";
 aloneNodeController pbftMain::nodeController;
@@ -32,18 +31,17 @@ void initWinsock() {
 }
 
 int main() {
-    /*// todo: ?????????
-    aloneNodeController::setNodeNo(19);
+    aloneNodeController::init(19);
 
     initWinsock();
 
-    // ????????????????????peerThreads????
+
     std::thread networkThread(&peerNetwork::run, std::ref(pbftMain::network));
     networkThread.detach();
     std::cout << "[  Node is started in port: " << port << "  ]" << std::endl;
 
     std::vector<std::string> peers = std::vector<std::string>(0);
-    // ??peers.list????????????ip&port????????
+
     if (access("../config/peers.list", 0) < 0) {
         char ip[16] = {0};
         if (commonUtils::getLocalIP(ip) == 0) {
@@ -62,7 +60,7 @@ int main() {
             commonUtils::split(str, sv, ":");
 
             std::cout << "Node line 65: " << sv[0] << ":" << sv[1] << std::endl;
-            // ??????????
+
             if (commonUtils::isLocal(sv[0]) && std::to_string(port) == sv[1]) {
                 continue;
             }
@@ -75,45 +73,24 @@ int main() {
 
     bool runFlag = true;
     while (runFlag) {
-        for (const auto &peer : pbftMain::network.peers) {
-            if (std::find(peers.begin(), peers.end(), peer) == peers.end()) {
-                std::cout << "-" << peer << "-" << std::endl;
-                peers.emplace_back(peer);
-                commonUtils::writeToFile("peers.list", peer, std::ios::app);
-            }
-        }
-        // peerNetwork1.peers??????????
-        pbftMain::network.peers.clear();
-
         for (auto pt : pbftMain::network.peerThreads) {
-//            std::cout << "-" << pbftMain::network.peerThreads.size() << "-" << std::endl;
             std::vector<std::string> dataVector = pt.peerReader1.readData();
 
             for (std::string data : dataVector) {
-                // todo: ??????????
                 cout << "[p2p] COMMAND:: " << data << endl;
 
                 Msg *msg = Msg::fromJson(data);
 
-//                std::thread t1(&aloneNodeController::start, &msg);
-//                t1.detach();
-                pbftMain::nodeController.start(msg);
+                std::thread t1(&aloneNodeController::start, msg);
+                t1.detach();
             }
         }
 
-         // ?30ms
         std::this_thread::sleep_for(std::chrono::milliseconds(30));
-    }*/
-
-    string str="789";
-    int num=atoi(str.c_str());
-    cout<<num;
+    }
 }
 
 
-/**
- * ??
- */
 void pbftMain::broadcast(std::string sendMsg) {
     pbftMain::network.broadcast(sendMsg);
 }

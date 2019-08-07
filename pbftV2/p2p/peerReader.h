@@ -33,7 +33,7 @@ public:
 
     void run();
 
-    // 鍙栧嚭缂撳啿鏁版嵁
+    // 取出缓冲数据
     std::vector<std::string> readData();
 };
 
