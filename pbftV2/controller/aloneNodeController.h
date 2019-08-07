@@ -6,90 +6,117 @@
 #define PBFTV2_ALONENODECONTROLLER_H
 
 #include <vector>
-#include <mutex>
-#include <algorithm>
-#include <thread>
-
 #include "../msg/Msg.h"
 #include "../config/Config.h"
-
+#include <mutex>
+#include <map>
+#include <algorithm>
+#include <thread>
 using namespace std;
+
 class aloneNodeController {
 
 private:
-    /// request消息待处理队列
-    static vector<Msg*> requestReadyList;
-    static vector<aloneNodeController*> nodes;
-    /// nodes中最多存放节点的个数
-    static const int nodeSizeMax;
-    /// 节点编号
+
+    ////配置文件读取
+    static Config configSettings;
+    ////主机编号
     static int nodeNo;
-    /// 通过的pp消息
-    vector<Msg*> ppMsgs;
-    /// pp消息队列
+    ////request请求列表
+    static vector<Msg*> requestReadyList;
+    ////锁
+    static mutex mtx;
+    ////主机节点列表
+    static vector<aloneNodeController*> nodes;
+    ////指定当前节点最多有多少个处理节点
+    static const int nodeSizeMax;
+    ////通过request的content
+    vector<string> requestList;
+    ////是否通过confirm消息
+    bool isConfirm= false;
+    ////pp消息队列
     vector<int> ppMsgList;
-    /// pp消息待处理队列
+    ////pp消息待处理队列
     vector<Msg*> ppMsgReadyList;
-    /// 记录对应序列号收到的p消息的个数
-    int pTimes[6][2];
-    /// 通过的p消息队列
+    ////记录对应序列号收到的p消息的个数
+    int pTimes[6][2]={0};
+    ////p消息队列
     vector<int> pMsgList;
-    /// p消息待处理队列
+    ////记录p消息来自哪个主机,内容是序列号+“&”+主机号
+    vector<string> pMsgNodeNos;
+    ////p消息待处理队列
     vector<Msg*> pMsgReadyList;
-    /// 记录对应序列号收到的c消息的个数
-    int cTimes[6][2];
-    /// 通过的c消息队列
+    ////记录对应序列号收到的c消息的个数
+    int cTimes[6][2]={0};
+    ////c消息队列
     vector<int> cMsgList;
-    /// c消息待处理队列
+    ////记录c消息来自哪个主机，内容是序列号+“&”+主机号
+    vector<string> cMsgNodeNos;
+    ////c消息待处理队列
     vector<Msg*> cMsgReadyList;
-    /// 是否为投票节点
-    bool isVote;
-    /// 视图编号
+    ////是否为主节点
+    bool isMain= false;
+    ////是否为投票节点
+    bool isVote= false;
+    ///系统
     int viewNo;
-    /// 高水位线
+    ///系统节点的标识
+    int systemId;
+
     int highLine;
-    /// 低水位线
+
     int lowLine;
-    /// 序列号
-    int serialNo;
-    /// 轮次
-    int times;
-    /// 投票节点的个数
+
+    ////主节点生成的序列号
+    int serialNo=1;
+
+    ////轮次
+    int times=0;
+
+    ////投票节点的个数
     int chooseSize;
-    /// 用于读取配置文件
-    Config configSettings;
-    /// 系统ip
-    int systemIp;
+
 public:
-public:
+
+    aloneNodeController();
+
+    ~aloneNodeController();
+
+
     /**
-     * 共识开始
-     * @param msg
-     */
+    * 启动方法
+    * @param msg
+    */
     static void start(Msg* msg);
 
     /**
-     * 删除nodes里的一半节点并delete
-     */
-    static void removeHalfNodes();
-
-    /**
-     * 收到消息以及对应处理
-     * @param msg
-     */
+    * 入口方法
+    * @param msg
+    */
     void action(Msg* msg);
 
     /**
-     * 处理Confirm消息
+    * 删除nodes里的一半节点并delete
+    */
+    static void removeHalfNodes();
+
+    /**
+     * 处理confirm消息
      * @param confirmMain
      */
     void dealWithConfirm(Msg* confirmMain);
 
     /**
-     * 处理Request消息
-     * @param request
+    * 处理request消息
+    * @param confirmMain
+    */
+    void dealWithRequest(Msg *request);
+
+    /**
+     * 处理待处理request消息队列
+     * @param remark
      */
-    void dealWithRequest(Msg* request);
+    void dealWithReadyRequest();
 
     /**
      * 处理pp消息
@@ -98,10 +125,47 @@ public:
     void dealWithPpMsg(Msg* ppMsg);
 
     /**
+     * 处理待处理PP消息队列
+     * @param serialNo
+     */
+    void dealWithReadyPpMsg(int serialNo);
+
+    void dealWithReadyPpMsg();
+
+    /**
+     * 检查ppMsg是否符合要求
+     * @param ppMsg
+     * @return
+     */
+    bool checkPpMsg(Msg* ppMsg);
+
+    /**
      * 处理p消息
      * @param pMsg
      */
     void dealWithPMsg(Msg* pMsg);
+
+    /**
+     * 处理待处理P消息队列
+     * @param serialNo
+     */
+    void dealWithReadyPMsg(int serialNo);
+
+    /**
+     * 处理待处理消息队列
+     * @param msg
+     * @param serialNo
+     */
+    void dealWithReadyMsg(vector<Msg*>& msgs,int serialNo);
+
+    void dealWithReadyMsg(vector<Msg*>& msgs);
+
+    /**
+     * 检查pMsg是否符合要求
+     * @param pMsg
+     * @return
+     */
+    bool checkPMsg(Msg* pMsg);
 
     /**
      * 处理c消息
@@ -110,65 +174,84 @@ public:
     void dealWithCMsg(Msg* commit);
 
     /**
-     * pp阶段检查收到的消息其序列号以及视图号是否符合标准
-     * @param ppMsg
-     * @return 符合为true
+     * 处理待处理C消息队列
+     * @param serialNo
      */
-    bool checkPpMsg(Msg* ppMsg);
+    void dealWithReadyCMsg(int serialNo);
 
     /**
-     * p阶段消息检查收到的消息其摘要、视图号、序列号是否符合标准
-     * @param pMsg
-     * @return
-     */
-    bool checkPMsg(Msg* pMsg);
-
-
-    /**
-     * C阶段消息检查收到的消息其摘要、视图号、序列号是否符合标准
+     * 检查cMsg是否符合要求
      * @param commit
      * @return
      */
     bool checkCMsg(Msg* commit);
 
     /**
-     * 检查消息
+     * 检查Msg是否符合要求
      * @param ppMsg
      * @return
      */
     bool check(Msg * ppMsg);
 
     /**
-     * 节点发消息
+     * 广播msg消息
      * @param msg
      */
-    static void sendMsg(Msg* msg);
+    void sendMsg(Msg* msg);
 
     /**
-     * 节点向系统发送reply消息
+     * 发送reply给系统
      * @param reply
+     * @return
      */
-    static void sendReply(Msg* reply);
+    static int sendReply(Msg* reply);
 
     /**
-     * 获得字符串的hash值
+     * 生成hash值并转化为string类型
      * @param content
-     * @return 哈希值的十进制无符号值
+     * @return
      */
-    static size_t getHashCode(string content);
-
-    /**
-     * 读取配置文件初始化参数
-     */
-    void initConfig();
+    static string getHashCode(string content);
 
     /**
      * 对应的向量中是否有该int类型
      * @param ve
      * @param num
-     * @return
+     * @return true : 在 false: 不在
      */
     static bool somethingIn(vector<int> ve,int num);
+
+    /**
+     * 对应的向量中是否有该字符串
+     * @param ve
+     * @param str
+     * @return true : 在 false: 不在
+     */
+    static bool somethingIn(vector<string> ve,string str);
+
+    /**
+     * 对应的向量中是否有该消息
+     * @param ve
+     * @param object
+     * @return true : 在 false: 不在
+     */
+    static bool objectIn(vector<Msg*> ve,Msg* object);
+
+    /**
+     * 对应的map中是否有对应的视图号
+     * @param mp
+     * @param viewNo
+     * @return true : 在 false: 不在
+     */
+    static bool somethingIn(map<int,bool>mp,int viewNo);
+
+    /**
+     * 查看msgs向量中有无对应的序列号的msg
+     * @param msgs
+     * @param serialNo
+     * @return
+     */
+    static bool MsgIn(vector<Msg*> msgs,int serialNo);
 
     /**
      * 检查节点列表中对应视图号的节点的位置，不存在则返回-1
@@ -179,19 +262,48 @@ public:
     static int nodeIn(vector<aloneNodeController*> ve,int viewNo);
 
     /**
-     * 写日志
-     * @param message
+     * 将msg存入对应类型的待处理队列
+     * @param node
+     * @param msg
      */
-    static void writeLog(string message);
+    static void pushReadMsg(aloneNodeController*node, Msg* msg);
 
-    /// getter和setter方法
-    static void setNodeNo(int nodeNo);
+    /**
+     * 初始化
+     * @param nodeNo
+     */
+    static void init(int nodeNo);
 
     int getViewNo() const;
 
     void setViewNo(int viewNo);
 
-    int getSystemIp() const;
+    int getTimes() const;
+
+    void setTimes(int times);
+
+
+    /**
+     * 测试用
+     * @param msg
+     * @param nodeNo
+     */
+    static void getMsg(Msg* msg,int nodeNo);
+
+
+    /**
+     * 输出
+     * @param msg
+     */
+    static void putString(string msg);
+
+    /**
+     *
+     * @param msgs
+     */
+    void deleteMsg(vector<Msg*> msgs);
+
+    int countMsg(vector<string> ve,int serialNo);
 
 };
 

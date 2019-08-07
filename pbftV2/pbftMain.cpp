@@ -23,27 +23,27 @@ void initWinsock() {
     WSADATA wsadata;
     if (WSAStartup(MAKEWORD(2, 2), &wsadata) != 0) {
         std::cout << "Failed to load WinSock" << std::endl;
-        std::cout << "????WinSock???" << std::endl;
+        std::cout << "---WinSock---" << std::endl;
     }
-    std::cout << "????WinSock???" << std::endl;
+    std::cout << "---WinSock---" << std::endl;
 
 
     std::cout << "Starting peer network... " << std::endl;
 }
 
 int main() {
-    // todo: ?????��??
-    aloneNodeController::setNodeNo(1);
+    /*// todo: ?????????
+    aloneNodeController::setNodeNo(19);
 
     initWinsock();
 
-    // ????????????????????peerThreads??��
+    // ????????????????????peerThreads????
     std::thread networkThread(&peerNetwork::run, std::ref(pbftMain::network));
     networkThread.detach();
     std::cout << "[  Node is started in port: " << port << "  ]" << std::endl;
 
     std::vector<std::string> peers = std::vector<std::string>(0);
-    // ??peers.list????????????ip&port��??????
+    // ??peers.list????????????ip&port????????
     if (access("../config/peers.list", 0) < 0) {
         char ip[16] = {0};
         if (commonUtils::getLocalIP(ip) == 0) {
@@ -93,8 +93,6 @@ int main() {
                 // todo: ??????????
                 cout << "[p2p] COMMAND:: " << data << endl;
 
-                // todo: data?????��??Msg????
-                // todo: ????????????Msg??????
                 Msg *msg = Msg::fromJson(data);
 
 //                std::thread t1(&aloneNodeController::start, &msg);
@@ -105,7 +103,11 @@ int main() {
 
          // ?30ms
         std::this_thread::sleep_for(std::chrono::milliseconds(30));
-    }
+    }*/
+
+    string str="789";
+    int num=atoi(str.c_str());
+    cout<<num;
 }
 
 
@@ -117,7 +119,6 @@ void pbftMain::broadcast(std::string sendMsg) {
 }
 
 /**
- * ???????????
  * @param sendMsg
  * @param nodeNo
  */

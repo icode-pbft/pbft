@@ -1,5 +1,5 @@
 /**
-* @author 谭红霞
+* @author ̷��ϼ
 * @date 2019/8/1 20:02
 */
 #ifndef PBFTV2_NEWMSG_H
@@ -7,11 +7,21 @@
 
 #include <vector>
 #include "iostream"
-#include "result/Result.h"
-#include "requestMsg/RequestMsg.h"
 #include <json/json.h>
 
+
 using namespace std;
+
+/**
+ * @author lml
+ * type enum:
+ * request--request
+ * confirm--confirm
+ * pMsm--pMsg
+ * ppMsg--ppMsg
+ * commit--commit
+ * reply--reply
+ */
 class Msg {
 private:
     string type;
@@ -23,17 +33,42 @@ private:
     int serialNo;
     int nodeNo;
     string content;
-    string result;
-    int systemIp; // 系统
+    bool result;
+    int systemId;
 
 public:
+
     Msg();
+
     Msg(const string &type, int viewNo, string remark, int serialNo,int nodeNo, const string &content);
+
     Msg(const string &type, int viewNo, string remark, int serialNo,int nodeNo);
-    Msg(const string &type,  int serialNo, string result);
+
+    Msg(const string &type,  int serialNo, bool result);
+
+    Msg(int viewNo, const vector<int> &chooseNodes, int mainNode, int systemId,const string &type);
+
+    Msg(const string &type, int viewNo, const string &content,const string &remark);
+
+    Msg(int viewNo, int serialNo, const string &content,const string &type,const string &remark,int nodeNo);
+
+    Msg(int viewNo, int serialNo, int nodeNo, bool result,const string &type);
+
     Json::Value toJsonValue();
     string toJsonStr();
-    static Msg* fromJson(const string& itemStr);
+    Msg* fromJson(const string& itemStr);
+
+    static string getHashCode(string content);
+
+    static Msg* createConfirm(int viewNo,int systemId,vector<int> chooseNodes,int mainNode);
+    static Msg* createRequest(string content,int viewNo);
+    static Msg* createPpMsg(string content,int serialNo,int viewNo,int nodeNo);
+    static Msg* createPMsg(string content,int serialNo,int viewNo,int nodeNo);
+    static Msg* createCMsg(string content,int serialNo,int viewNo,int nodeNo);
+    static Msg* createReply(bool result,int serialNo,int viewNo,int nodeNo);
+
+    ////getter&setter
+
 
     const string &getType() const;
 
@@ -59,9 +94,9 @@ public:
 
     void setNodeNo(int nodeNo);
 
-    const string &getResult() const;
+    const bool &getResult() const;
 
-    void setResult(const string &result);
+    void setResult(const bool &result);
 
     const string &getContent() const;
 
@@ -71,9 +106,9 @@ public:
 
     void setRemark(const string &remark);
 
-    int getSystemIp() const;
+    int getSystemId() const;
 
-    void setSystemIp(int systemIp);
+    void setSystemId(int systemId);
 
 };
 #endif //PBFTV2_NEWMSG_H

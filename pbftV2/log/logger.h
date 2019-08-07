@@ -16,25 +16,26 @@
 
 
 ///
-/// \brief æ—¥å¿—æ–‡ä»¶çš„ç±»å‹
+/// \brief ÈÕÖ¾ÎÄ¼şµÄÀàĞÍ
 ///
 typedef enum log_rank {
     INFO,
     WARNING,
+    ERROR,
     FATAL
 }log_rank_t;
 
 ///
-/// \brief åˆå§‹åŒ–æ—¥å¿—æ–‡ä»¶
-/// \param info_log_filename ä¿¡æ¯æ–‡ä»¶çš„åå­—
-/// \param warn_log_filename è­¦å‘Šæ–‡ä»¶çš„åå­—
-/// \param error_log_filename é”™è¯¯æ–‡ä»¶çš„åå­—
+/// \brief ³õÊ¼»¯ÈÕÖ¾ÎÄ¼ş
+/// \param info_log_filename ĞÅÏ¢ÎÄ¼şµÄÃû×Ö
+/// \param warn_log_filename ¾¯¸æÎÄ¼şµÄÃû×Ö
+/// \param error_log_filename ´íÎóÎÄ¼şµÄÃû×Ö
 void initLogger(const std::string&info_log_filename,
                 const std::string&warn_log_filename,
                 const std::string&error_log_filename);
 
 ///
-/// \brief æ—¥å¿—ç³»ç»Ÿç±»
+/// \brief ÈÕÖ¾ÏµÍ³Àà
 ///
 class Logger {
     friend void initLogger(const std::string& info_log_filename,
@@ -42,7 +43,7 @@ class Logger {
                            const std::string& erro_log_filename);
 
 public:
-    //æ„é€ å‡½æ•°
+    //¹¹Ôìº¯Êı
     Logger(log_rank_t log_rank) : m_log_rank(log_rank) {};
 
 
@@ -50,36 +51,36 @@ public:
 
     ~Logger();
     ///
-    /// \brief å†™å…¥æ—¥å¿—ä¿¡æ¯ä¹‹å‰å…ˆå†™å…¥çš„æºä»£ç æ–‡ä»¶å, è¡Œå·, å‡½æ•°å
-    /// \param log_rank æ—¥å¿—çš„ç­‰çº§
-    /// \param line æ—¥å¿—å‘ç”Ÿçš„è¡Œå·
-    /// \param function æ—¥å¿—å‘ç”Ÿçš„å‡½æ•°
+    /// \brief Ğ´ÈëÈÕÖ¾ĞÅÏ¢Ö®Ç°ÏÈĞ´ÈëµÄÔ´´úÂëÎÄ¼şÃû, ĞĞºÅ, º¯ÊıÃû
+    /// \param log_rank ÈÕÖ¾µÄµÈ¼¶
+    /// \param line ÈÕÖ¾·¢ÉúµÄĞĞºÅ
+    /// \param function ÈÕÖ¾·¢ÉúµÄº¯Êı
     static std::ostream& start(log_rank_t log_rank,
                                const int line,
                                const std::string& function);
 
 private:
     ///
-    /// \brief æ ¹æ®ç­‰çº§è·å–ç›¸åº”çš„æ—¥å¿—è¾“å‡ºæµ
+    /// \brief ¸ù¾İµÈ¼¶»ñÈ¡ÏàÓ¦µÄÈÕÖ¾Êä³öÁ÷
     ///
     static std::ostream& getStream(log_rank_t log_rank);
 
     static std::mutex mtx;
-    static std::ofstream m_info_log_file;                   ///< ä¿¡æ¯æ—¥å­çš„è¾“å‡ºæµ
-    static std::ofstream m_warn_log_file;                  ///< è­¦å‘Šä¿¡æ¯çš„è¾“å‡ºæµ
-    static std::ofstream m_error_log_file;                  ///< é”™è¯¯ä¿¡æ¯çš„è¾“å‡ºæµ
-    log_rank_t m_log_rank;                             ///< æ—¥å¿—çš„ä¿¡æ¯çš„ç­‰çº§
+    static std::ofstream m_info_log_file;                   ///< ĞÅÏ¢ÈÕ×ÓµÄÊä³öÁ÷
+    static std::ofstream m_warn_log_file;                  ///< ¾¯¸æĞÅÏ¢µÄÊä³öÁ÷
+    static std::ofstream m_error_log_file;                  ///< ´íÎóĞÅÏ¢µÄÊä³öÁ÷
+    log_rank_t m_log_rank;                             ///< ÈÕÖ¾µÄĞÅÏ¢µÄµÈ¼¶
 };
 
 
 ///
-/// \brief æ ¹æ®ä¸åŒç­‰çº§è¿›è¡Œç”¨ä¸åŒçš„è¾“å‡ºæµè¿›è¡Œè¯»å†™
+/// \brief ¸ù¾İ²»Í¬µÈ¼¶½øĞĞÓÃ²»Í¬µÄÊä³öÁ÷½øĞĞ¶ÁĞ´
 ///
 #define LOG(log_rank)   \
 Logger(log_rank).start(log_rank, __LINE__,__FUNCTION__)
 
 ///
-/// \brief åˆ©ç”¨æ—¥è®°è¿›è¡Œæ£€æŸ¥çš„å„ç§å®
+/// \brief ÀûÓÃÈÕ¼Ç½øĞĞ¼ì²éµÄ¸÷ÖÖºê
 ///
 #define CHECK(a)                                            \
    if(!(a)) {                                              \

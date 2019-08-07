@@ -2,7 +2,7 @@
 // Created by t0106 on 2019/7/14.
 //
 
-#include <iostream>
+#include  <iostream>
 #include <vector>
 #include <thread>
 #include <WinSock2.h>
@@ -13,6 +13,7 @@
 #include "peerNetwork.h"
 #include "peerThread.h"
 
+std::mutex peerNetwork::networkMutex;
 
 peerNetwork::peerNetwork() {
     this->port = 8015;
@@ -58,7 +59,20 @@ void peerNetwork::connectToPeer(std::string ipAddress, int port) {
         peerThread pt = peerThread(clientSocket, ipAddress);
         std::thread ptThread(&peerThread::run, pt);
         ptThread.detach();
-        peerThreads.emplace_back(pt);
+
+        networkMutex.lock();
+        int flag = true;
+        for (auto & peerThread : peerThreads) {
+            if (ipAddress == peerThread.ipAddress) {
+                flag = false;
+                break;
+            }
+        }
+        if (flag) {
+            peerThreads.emplace_back(pt);
+            std::cout<< "peerNetWork connectToPeer(): number of accepted connection: " <<peerThreads.size() << std::endl;
+        }
+        networkMutex.unlock();
     }
 }
 
@@ -77,49 +91,60 @@ void peerNetwork::run() {
     serverAddr.sin_family = AF_INET;
     serverAddr.sin_port = htons(static_cast<u_short>(port));
     /*
-     * INADDR_ANYå°±æ˜¯æŒ‡å®šåœ°å€ä¸º0.0.0.0çš„åœ°å€ï¼Œ
-     * è¿™ä¸ªåœ°å€äº‹å®ä¸Šè¡¨ç¤ºä¸ç¡®å®šåœ°å€ï¼Œæˆ–â€œæ‰€æœ‰åœ°å€â€ã€â€œä»»æ„åœ°å€â€ã€‚
-     * ä¸€èˆ¬æ¥è¯´ï¼Œåœ¨å„ä¸ªç³»ç»Ÿä¸­å‡å®šä¹‰æˆä¸º0å€¼ã€‚
+     * INADDR_ANY¾ÍÊÇÖ¸¶¨µØÖ·Îª0.0.0.0µÄµØÖ·£¬
+     * Õâ¸öµØÖ·ÊÂÊµÉÏ±íÊ¾²»È·¶¨µØÖ·£¬»ò¡°ËùÓĞµØÖ·¡±¡¢¡°ÈÎÒâµØÖ·¡±¡£
+     * Ò»°ãÀ´Ëµ£¬ÔÚ¸÷¸öÏµÍ³ÖĞ¾ù¶¨Òå³ÉÎª0Öµ¡£
      */
     serverAddr.sin_addr.S_un.S_addr = htonl(INADDR_ANY);
 
     int receiveValue;
-    // socketç»‘å®šç«¯å£
+    // socket°ó¶¨¶Ë¿Ú
     receiveValue = bind(serverSocket, (struct sockaddr *) &serverAddr, sizeof(SOCKADDR_IN));
     if (receiveValue == SOCKET_ERROR) {
         std::cout << "peerNetWork run(): port binding failed: " << WSAGetLastError() << std::endl;
         return;
     }
 
-    // socketç›‘å¬ç«¯å£
-    // ç¬¬äºŒä¸ªå‚æ•°backlogè¿˜ä¸çŸ¥é“æ˜¯ä»€ä¹ˆæ„æ€
+    // socket¼àÌı¶Ë¿Ú
+    // µÚ¶ş¸ö²ÎÊıbacklog»¹²»ÖªµÀÊÇÊ²Ã´ÒâË¼
     receiveValue = listen(serverSocket, 10);
     if (receiveValue == SOCKET_ERROR) {
-        std::cout << "peerNetWork run(): listening port failedï¼š " << WSAGetLastError() << std::endl;
+        std::cout << "peerNetWork run(): listening port failed£º " << WSAGetLastError() << std::endl;
         return;
     }
 
     std::cout << "start listening :" + std::to_string(port) << std::endl;
     while (runFlag) {
-        // ç›‘å¬æˆåŠŸï¼Œç­‰å¾…Clientç«¯è¿æ¥
+        // ¼àÌı³É¹¦£¬µÈ´ıClient¶ËÁ¬½Ó
         SOCKADDR_IN clientAddr;
         int lenSOCKADDR = sizeof(SOCKADDR);
         SOCKET connectSocket = accept(serverSocket, (SOCKADDR *) &clientAddr, &lenSOCKADDR);
 
         if (connectSocket == SOCKET_ERROR) {
             std::cout << "peerNetWork run(): failed accept: " << WSAGetLastError() << std::endl;
-            std::cout << "peerNetWork run(): accept failedï¼š " << WSAGetLastError() << std::endl;
+            std::cout << "peerNetWork run(): accept failed£º " << WSAGetLastError() << std::endl;
         }
         char ipAddress[16] = {0};
         inet_ntop(AF_INET, &clientAddr.sin_addr, ipAddress, sizeof(ipAddress));
         std::cout << "\npeerNetWork run(): accept client IP: " << ipAddress << "\n"<< std::endl;
 
-        peerThread peerThread1 = peerThread(connectSocket, ipAddress);
-        peerThreads.emplace_back(peerThread1);
-
-        std::cout<< "peerNetWork run(): number of accepted connection: " <<peerThreads.size() << std::endl;
-        std::thread ptThread(&peerThread::run, peerThread1);
+        peerThread pt = peerThread(connectSocket, ipAddress);
+        std::thread ptThread(&peerThread::run, pt);
         ptThread.detach();
+
+        networkMutex.lock();
+        int flag = true;
+        for (auto & peerThread : peerThreads) {
+            if (ipAddress == peerThread.ipAddress) {
+                flag = false;
+                break;
+            }
+        }
+        if (flag) {
+            peerThreads.emplace_back(pt);
+            std::cout<< "peerNetWork run(): number of accepted connection: " <<peerThreads.size() << std::endl;
+        }
+        networkMutex.unlock();
     }
 }
 
