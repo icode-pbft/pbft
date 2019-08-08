@@ -10,6 +10,7 @@
 #include "peerWriter.h"
 #include "peerReader.h"
 
+
 class peerThread {
 private:
     SOCKET clientSocket;

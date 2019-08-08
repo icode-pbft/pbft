@@ -1,4 +1,6 @@
+#include <sstream>
 #include "Msg.h"
+
 
 Json::Value Msg::toJsonValue() {
     Json::Value result;
@@ -19,7 +21,15 @@ Json::Value Msg::toJsonValue() {
 }
 
 string Msg::toJsonStr() {
-    return toJsonValue().toStyledString();
+    Json::StreamWriterBuilder builder;
+    builder.settings_["indentation"] = "";
+
+    Json::StreamWriter *writer(builder.newStreamWriter());
+    std::ostringstream os;
+
+    writer->write(toJsonValue(), &os);
+
+    return os.str();
 }
 
 Msg* Msg::fromJson(const string& itemStr) {

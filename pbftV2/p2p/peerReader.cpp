@@ -8,13 +8,14 @@
 
 #include "peerReader.h"
 
+
 std::map<std::string, std::deque<std::string>> peerReader::readMap;
 std::mutex peerReader::readMapMutex;
 
 peerReader::peerReader() {}
 
 /**
- * ¹¹Ôìº¯Êý ³õÊ¼Ê±¼´¸østatic map¸³ÓèkeyÖµ
+ * ï¿½ï¿½ï¿½ìº¯ï¿½ï¿½ ï¿½ï¿½Ê¼Ê±ï¿½ï¿½ï¿½ï¿½static mapï¿½ï¿½ï¿½ï¿½keyÖµ
  */
 peerReader::peerReader(SOCKET clientSocket, const std::string &ipAddress) : clientSocket(clientSocket),
                                                                             ipAddress(ipAddress) {
@@ -46,20 +47,20 @@ void peerReader::run() {
 
             std::string msg(receiveMsgBuff);
 
-            // È¥³ý½áÎ²µÄ»»ÐÐ·û \r\n
+            // È¥ï¿½ï¿½ï¿½ï¿½Î²ï¿½Ä»ï¿½ï¿½Ð·ï¿½ \r\n
             while (msg.back() == '\r' || msg.back() == '\n') {
                 msg.pop_back();
             }
-            //todo:´æÈë¶ÓÁÐ 2019Äê8ÔÂ3ÈÕ15:17:23 ÌïÔóöÎ
+            //todo:ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 2019ï¿½ï¿½8ï¿½ï¿½3ï¿½ï¿½15:17:23 ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
             readMapMutex.lock();
             peerReader::readMap[this->ipAddress].push_back(msg);
             readMapMutex.unlock();
         }
-        //todo:³ÁË¯£¿
+        //todo:ï¿½ï¿½Ë¯ï¿½ï¿½
 //        std::this_thread::sleep_for(std::chrono::seconds(1));
     }
 
-    // Õý³£Çé¿öÏÂ»áÒ»Ö±whileÑ­»·×èÈû
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Â»ï¿½Ò»Ö±whileÑ­ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     std::cout << "peerReader run(): socket disconnected " << std::endl;
 }
 

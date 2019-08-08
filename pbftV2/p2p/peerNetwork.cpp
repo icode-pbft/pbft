@@ -14,7 +14,6 @@
 #include "peerThread.h"
 
 std::mutex peerNetwork::networkMutex;
-
 peerNetwork::peerNetwork() {
     this->port = 8015;
     peerThreads = std::vector<peerThread>(0);
@@ -91,38 +90,38 @@ void peerNetwork::run() {
     serverAddr.sin_family = AF_INET;
     serverAddr.sin_port = htons(static_cast<u_short>(port));
     /*
-     * INADDR_ANY¾ÍÊÇÖ¸¶¨µØÖ·Îª0.0.0.0µÄµØÖ·£¬
-     * Õâ¸öµØÖ·ÊÂÊµÉÏ±íÊ¾²»È·¶¨µØÖ·£¬»ò¡°ËùÓÐµØÖ·¡±¡¢¡°ÈÎÒâµØÖ·¡±¡£
-     * Ò»°ãÀ´Ëµ£¬ÔÚ¸÷¸öÏµÍ³ÖÐ¾ù¶¨Òå³ÉÎª0Öµ¡£
+     * INADDR_ANYï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½ï¿½Ö·Îª0.0.0.0ï¿½Äµï¿½Ö·ï¿½ï¿½
+     * ï¿½ï¿½ï¿½ï¿½ï¿½Ö·ï¿½ï¿½Êµï¿½Ï±ï¿½Ê¾ï¿½ï¿½È·ï¿½ï¿½ï¿½ï¿½Ö·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ðµï¿½Ö·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö·ï¿½ï¿½ï¿½ï¿½
+     * Ò»ï¿½ï¿½ï¿½ï¿½Ëµï¿½ï¿½ï¿½Ú¸ï¿½ï¿½ï¿½ÏµÍ³ï¿½Ð¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Îª0Öµï¿½ï¿½
      */
     serverAddr.sin_addr.S_un.S_addr = htonl(INADDR_ANY);
 
     int receiveValue;
-    // socket°ó¶¨¶Ë¿Ú
+    // socketï¿½ó¶¨¶Ë¿ï¿½
     receiveValue = bind(serverSocket, (struct sockaddr *) &serverAddr, sizeof(SOCKADDR_IN));
     if (receiveValue == SOCKET_ERROR) {
         std::cout << "peerNetWork run(): port binding failed: " << WSAGetLastError() << std::endl;
         return;
     }
 
-    // socket¼àÌý¶Ë¿Ú
-    // µÚ¶þ¸ö²ÎÊýbacklog»¹²»ÖªµÀÊÇÊ²Ã´ÒâË¼
+    // socketï¿½ï¿½ï¿½ï¿½ï¿½Ë¿ï¿½
+    // ï¿½Ú¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½backlogï¿½ï¿½ï¿½ï¿½Öªï¿½ï¿½ï¿½ï¿½Ê²Ã´ï¿½ï¿½Ë¼
     receiveValue = listen(serverSocket, 10);
     if (receiveValue == SOCKET_ERROR) {
-        std::cout << "peerNetWork run(): listening port failed£º " << WSAGetLastError() << std::endl;
+        std::cout << "peerNetWork run(): listening port failedï¿½ï¿½ " << WSAGetLastError() << std::endl;
         return;
     }
 
     std::cout << "start listening :" + std::to_string(port) << std::endl;
     while (runFlag) {
-        // ¼àÌý³É¹¦£¬µÈ´ýClient¶ËÁ¬½Ó
+        // ï¿½ï¿½ï¿½ï¿½ï¿½É¹ï¿½ï¿½ï¿½ï¿½È´ï¿½Clientï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         SOCKADDR_IN clientAddr;
         int lenSOCKADDR = sizeof(SOCKADDR);
         SOCKET connectSocket = accept(serverSocket, (SOCKADDR *) &clientAddr, &lenSOCKADDR);
 
         if (connectSocket == SOCKET_ERROR) {
             std::cout << "peerNetWork run(): failed accept: " << WSAGetLastError() << std::endl;
-            std::cout << "peerNetWork run(): accept failed£º " << WSAGetLastError() << std::endl;
+            std::cout << "peerNetWork run(): accept failedï¿½ï¿½ " << WSAGetLastError() << std::endl;
         }
         char ipAddress[16] = {0};
         inet_ntop(AF_INET, &clientAddr.sin_addr, ipAddress, sizeof(ipAddress));

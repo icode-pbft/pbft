@@ -8,6 +8,7 @@
 
 #include "peerWriter.h"
 
+
 std::map<std::string, std::deque<std::string>> peerWriter::writeMap;
 std::mutex peerWriter::writeMapMutex;
 
@@ -49,7 +50,7 @@ void peerWriter::run() {
             sendMsg = "";
         }
 
-        // todo:�̳߳�˯
+        // todo:�̳߳�˯
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
 
