@@ -48,7 +48,7 @@ Msg* Msg::fromJson(const string& itemStr) {
             choosed.push_back(choose[i].asInt());
         }
         msg->setChooseNodes(choosed);
-        msg->setMainNode(jsonItem["mainNo"].asInt());
+        msg->setMainNode(jsonItem["mainNode"].asInt());
         msg->setRemark(jsonItem["remark"].asString());
         msg->setSerialNo(jsonItem["serialNo"].asInt());
         msg->setNodeNo(jsonItem["nodeNo"].asInt());
