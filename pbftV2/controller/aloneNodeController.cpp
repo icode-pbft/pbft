@@ -14,24 +14,24 @@ mutex aloneNodeController::mtx;
 const int aloneNodeController::nodeSizeMax=100;
 
 /**
- * ????????
+ * 启动方法
  * @param msg
  */
 void aloneNodeController::start(Msg *msg) {
     ////lock
   //  mtx.lock();
     int index=nodeIn(nodes,msg->getViewNo());
-    putString("??????????"+to_string(nodes.size())+"----index=="+to_string(index)+"??????????????????????????"+msg->getType());
+    putString("主机节点个数"+to_string(nodes.size())+"----index=="+to_string(index)+"。。。。主机收到了数据的类型"+msg->getType());
     if(-1==index){
-        putString("???????????????????????????"+to_string(msg->getViewNo())+"??node");
+        putString("。。。。本主机不存在对应视图号"+to_string(msg->getViewNo())+"的node");
         if(nodes.size()>=nodeSizeMax){
-            putString("?????????????????????????????????");
+            putString("。。。。本主机的节点数过多，清除一半的节点");
             removeHalfNodes();
         }
         aloneNodeController* node=new aloneNodeController();
         node->setViewNo(msg->getViewNo());
         nodes.push_back(node);
-        putString("??????????????:"+to_string(nodes.size()));
+        putString("本主机当前节点数:"+to_string(nodes.size()));
 
         node->action(msg);
         ////unlock
@@ -46,7 +46,7 @@ void aloneNodeController::start(Msg *msg) {
 }
 
 /**
- * ??????
+ * 入口方法
  * @param msg
  */
 void aloneNodeController::action(Msg *msg) {
@@ -67,7 +67,7 @@ void aloneNodeController::action(Msg *msg) {
 }
 
 /**
- * ????????????
+ * 初始化静态数据
  * @param nodeNo
  */
 void aloneNodeController::init(int nodeNo) {
@@ -78,7 +78,7 @@ void aloneNodeController::init(int nodeNo) {
 }
 
 /**
- * ????hash???????string????
+ * 生成hash值并转化为string类型
  * @param content
  * @return
  */
@@ -88,7 +88,7 @@ string aloneNodeController::getHashCode(string content) {
 }
 
 /**
- * ????confirm???
+ * 处理confirm消息
  * @param confirmMain
  */
 void aloneNodeController::dealWithConfirm(Msg* confirmMain) {
@@ -103,25 +103,25 @@ void aloneNodeController::dealWithConfirm(Msg* confirmMain) {
     systemId = confirmMain->getSystemId();
 
     for (int i = 0; i < confirmMain->getChooseNodes().size(); ++i) {
-        putString("???????:"+to_string(confirmMain->getChooseNodes().at(i)));
+        putString("投票节点有:"+to_string(confirmMain->getChooseNodes().at(i)));
     }
     cout<<endl;
-    ///????????????????
+    ///查看该节点是否是投票节点
     if(somethingIn(chooseNodes, nodeNo)){
-        putString(to_string(nodeNo)+"???????????");
+        putString(to_string(nodeNo)+"号节点是投票节点");
         isVote= true;
-        putString("????????"+to_string(confirmMain->getMainNode())+"??????????"+to_string(nodeNo));
+        putString("主节点编号："+to_string(confirmMain->getMainNode())+"本主机编号为"+to_string(nodeNo));
         if(nodeNo==confirmMain->getMainNode()){
-            putString("???????????");
+            putString("该节点是主节点");
             isMain=true;
             dealWithReadyRequest();
         } else{
             isMain=false;
-            ////??????????pp???(???????л?δ??????????????pp????????)
+            ////处理待处理的pp消息(避免之前有还未确认身份，就已收到pp消息的情况)
             dealWithReadyPpMsg();
         }
     }else{
-        putString(to_string(nodeNo)+"???????????.");
+        putString(to_string(nodeNo)+"号节点不是投票节点.");
         isVote= false;
         return;
     }
@@ -131,25 +131,25 @@ void aloneNodeController::dealWithConfirm(Msg* confirmMain) {
 }
 
 /**
- * ????request???
+ *  处理request消息
  * @param confirmMain
  */
 void aloneNodeController::dealWithRequest(Msg *request) {
     if(!isMain){
-        putString("??????????");
+        putString("非主节点，退出");
         return;
     }
     if(somethingIn(requestList,request->getContent())){
-        ////????????????????request
-        putString("????????????????request");
+        ////已经处理过相同内容的request
+        putString("已经处理过相同内容的request");
         return;
     }
     requestList.push_back(request->getContent());
-    putString("????request???");
+    putString("处理request消息");
 
 
-    ////?????????pTims??cTimes??
-    putString("?????pTims??cTimes");
+    ////主节点初始化pTims和cTimes；
+    putString("初始化pTims和cTimes");
     pTimes[times][0]=serialNo;
     cTimes[times][0]=serialNo;
     Msg* ppMsg=new Msg();
@@ -158,17 +158,17 @@ void aloneNodeController::dealWithRequest(Msg *request) {
     ppMsg->setContent(request->getContent());
     ppMsg->setSerialNo(serialNo);
     ppMsg->setRemark(request->getRemark());
-    ////???????pp????б??????????????????????pp????????к?
+    ////向已处理pp消息列表中添加主节点（自己）发出的pp消息的序列号
     ppMsgList.push_back(serialNo);
 
-    ////????к???
+    ////使序列号加一
     serialNo+=1;
     times++;
 
     sendMsg(ppMsg);
     dealWithReadyPMsg(serialNo-1);
 
-    //???????p???
+    //主节点不发p消息
 //    Msg* pMsg=ppMsg;
 //    pMsg->setType("pMsg");
 //    sendMsg(pMsg);
@@ -176,104 +176,104 @@ void aloneNodeController::dealWithRequest(Msg *request) {
 }
 
 /**
- * ????pp???
+ * 处理pp消息
  * @param ppMsg
  */
 void aloneNodeController::dealWithPpMsg(Msg* ppMsg) {
     if(!checkPpMsg(ppMsg)){
-        putString("pp?????????");
+        putString("pp消息验证失败");
         return;
     } else{
 
-        putString("pp??????");
-        ////??????к?
+        putString("pp消息通过");
+        ////记录序列号
         int serialNo=ppMsg->getSerialNo();
 
-        ////???????????pTims??cTimes??
+        ////给主节点初始化pTims和cTimes；
         pTimes[times][0]=serialNo;
         cTimes[times][0]=serialNo;
         times++;
 
-        ////??????????к??????????pp????б???
+        ////非主节点将序列号放入已处理的pp消息列表里
         ppMsgList.push_back(ppMsg->getSerialNo());
 
         Msg* pMsg=ppMsg;
         pMsg->setType("pMsg");
         sendMsg(pMsg);
 
-        ////?????????к???????p???
+        ////处理对应序列号的待处理p消息
         dealWithReadyPMsg(ppMsg->getSerialNo());
     }
 }
 
 /**
- * ????p???
+ * 处理p消息
  * @param pMsg
  */
 void aloneNodeController::dealWithPMsg(Msg* pMsg) {
 
-    putString("???????p???");
+    putString("开始处理p消息");
     if(!checkPMsg(pMsg)){
-        putString("p?????????");
+        putString("p消息验证失败");
         return;
     } else{
-        putString("p??????????????");
+        putString("p消息第一步验证成功");
 
         int serialNo=pMsg->getSerialNo();
 
-        ////????????pp????б?????ж???????к??
+        ////当已处理的pp消息列表里没有对应的序列号时
         if(!somethingIn(ppMsgList,serialNo)){
-            putString("???????????pp???????request??????????p?????????????б?,pMsgReadyList???С"+to_string(pMsgReadyList.size()));
+            putString("因为没有收到的pp消息或者request消息，所以将p消息存入待处理列表,pMsgReadyList的大小"+to_string(pMsgReadyList.size()));
             pMsgReadyList.push_back(pMsg);
                 return;
         }
-        putString("p??????????????");
+        putString("p消息第二步验证成功");
 
-        ////??????????????p?????????
+        ////将通过两步验证的p消息放入记录
         pMsgNodeNos.push_back(to_string(pMsg->getSerialNo())+"&"+to_string(pMsg->getNodeNo()));
 
-        ////?????????к??p???????????2f??
+        ////计算同一序列号的p消息是否收到了2f个
         if(countMsg(pMsgNodeNos,pMsg->getSerialNo())==(chooseSize-1)/3*2){
-            putString("?????????p???");
+            putString("收到了足够的p消息");
             pMsgList.push_back(serialNo);
             Msg* commit=pMsg;
             commit->setType("commit");
             sendMsg(commit);
 
-            ////??????????commit???
-            putString("???????c???");
+            ////处理待处理的commit消息
+            putString("开始处理c消息");
             dealWithReadyCMsg(serialNo);
         }
     }
 }
 
 /**
- * ????c???
+* 处理c消息
  * @param commit
  */
 void aloneNodeController::dealWithCMsg(Msg* commit) {
 
     if(!checkCMsg(commit)){
-        putString("c?????????");
+        putString("c消息验证失败");
         return;
     } else{
 
-        putString("c??????????????");
+        putString("c消息第一步验证成功");
         int serialNo=commit->getSerialNo();
 
-        ////???????к?????p??????????
+        ////当该序列号对应的p消息没有通过时
         if(!somethingIn(pMsgList,commit->getSerialNo())){
             cMsgReadyList.push_back(commit);
-            putString("?????????????p??????????c?????????????б?,cMsgReadyList???С"+to_string(cMsgReadyList.size()));
+            putString("因为没有收到足够的p消息，所以将c消息存入待处理列表,cMsgReadyList的大小"+to_string(cMsgReadyList.size()));
             return;
         }
 
-        putString("c??????????????");
+        putString("c消息第二步验证成功");
 
-        ////??????????????c?????????
+        ////将通过两步验证的c消息放入记录
         cMsgNodeNos.push_back(to_string(commit->getSerialNo())+"&"+to_string(commit->getNodeNo()));
 
-        ////?????????к??c???????????2f??
+        ////计算同一序列号的c消息是否收到了2f个o())==(chooseSize-1)/3*2){
         if(countMsg(cMsgNodeNos,commit->getSerialNo())==(chooseSize-1)/3*2){
             cMsgList.push_back(commit->getSerialNo());
             Msg*reply=commit;
@@ -287,59 +287,59 @@ void aloneNodeController::dealWithCMsg(Msg* commit) {
 }
 
 /**
- * ?????????request???????
+ * 处理待处理request消息队列
  * @param remark
  */
 void aloneNodeController::dealWithReadyRequest() {
-    cout<<"??????????request???\n";
+    cout<<"处理待处理的request消息\n";
     for (Msg* request:requestReadyList) {
         this->dealWithRequest(request);
     }
 }
 
 /**
- * ?????????PP???????
+ * 处理待处理PP消息队列
  * @param serialNo
  */
 void aloneNodeController::dealWithReadyPpMsg(int serialNo) {
 
-    putString("??????????pp???");
+    putString("处理待处理的pp消息");
     dealWithReadyMsg(ppMsgReadyList,serialNo);
 }
 
 /**
- * ?????????PP???????
+ * 处理待处理PP消息队列
  */
 void aloneNodeController::dealWithReadyPpMsg() {
-    putString("??????????pp???");
+    putString("处理待处理的pp消息");
     dealWithReadyMsg(ppMsgReadyList);
 }
 
 /**
- * ?????????P???????
+ * 处理待处理P消息队列
  * @param serialNo
  */
 void aloneNodeController::dealWithReadyPMsg(int serialNo) {
-    putString("?????????????к??"+to_string(serialNo)+"p???");
+    putString("处理待处理的序列号为"+to_string(serialNo)+"p消息");
     dealWithReadyMsg(pMsgReadyList,serialNo);
 }
 
 /**
- * ?????????C???????
+ * 处理待处理C消息队列
  * @param serialNo
  */
 void aloneNodeController::dealWithReadyCMsg(int serialNo) {
-    putString("??????????c???,???"+to_string(cMsgReadyList.size())+"??c??????????");
+    putString("处理待处理的c消息,总共"+to_string(cMsgReadyList.size())+"个c消息需要处理");
     dealWithReadyMsg(cMsgReadyList,serialNo);
 }
 
 /**
- * ????????????????
+ * 处理待处理消息队列
  * @param msgs
  * @param serialNo
  */
 void aloneNodeController::dealWithReadyMsg(vector<Msg*>& msgs,int serialNo) {
-    putString("???????????????????"+to_string(msgs.size())+"???к??"+to_string(serialNo));
+    putString("需要被处理的消息的个数为"+to_string(msgs.size())+"序列号为"+to_string(serialNo));
 
     for (int i = 0; i < msgs.size(); ++i) {
         if(msgs.at(i)->getSerialNo()==serialNo){
@@ -351,11 +351,11 @@ void aloneNodeController::dealWithReadyMsg(vector<Msg*>& msgs,int serialNo) {
 }
 
 /**
- * ????????????????
+ * 处理待处理消息队列
  * @param msgs
  */
 void aloneNodeController::dealWithReadyMsg(vector<Msg*>& msgs) {
-    putString("???????????????????"+to_string(msgs.size()));
+    putString("需要被处理的消息的个数为"+to_string(msgs.size()));
 
     for (int i = 0; i < msgs.size(); ++i) {
             action(msgs.at(i));
@@ -366,40 +366,40 @@ void aloneNodeController::dealWithReadyMsg(vector<Msg*>& msgs) {
 }
 
 /**
- * ???????????????и??????
+ * 对应的向量中是否有该字符串
  * @param ve
  * @param str
- * @return true : ?? false: ????
+ * @return true : 在 false: 不在
  */
 bool aloneNodeController::somethingIn(vector<string> ve, string str) {
     return std::find(ve.begin(),ve.end(),str)!=ve.end();
 }
 
 /**
- * ???????????????и?int????
+ * 对应的向量中是否有该int类型
  * @param ve
  * @param num
- * @return true : ?? false: ????
+ *  @return true : 在 false: 不在
  */
 bool aloneNodeController::somethingIn(vector<int> ve, int num) {
     return std::find(ve.begin(),ve.end(),num)!=ve.end();
 }
 
 /**
- * ?????map??????ж?????????
+ * 对应的map中是否有对应的视图号
  * @param mp
  * @param viewNo
- * @return true : ?? false: ????
+ * @return true : 在 false: 不在
  */
 bool aloneNodeController::somethingIn(map<int, bool> mp, int viewNo) {
     return mp.find(viewNo)!=mp.end();
 }
 
 /**
- * ???????????????и????
+ * 对应的向量中是否有该消息
  * @param ve
  * @param object
- * @return true : ?? false: ????
+ * @return true : 在 false: 不在
  */
 bool aloneNodeController::objectIn(vector<Msg *> ve, Msg *object) {
     return std::find(ve.begin(),ve.end(),object)!=ve.end();
@@ -408,7 +408,7 @@ bool aloneNodeController::objectIn(vector<Msg *> ve, Msg *object) {
 /**
 * @param ve
  * @param viewNo
- * @return -1 : ?????? other: λ??
+ * @return -1 : 没有找到 other: 位置
  */
 int aloneNodeController::nodeIn(vector<aloneNodeController *> ve,int viewNo) {
     for (int i = 0; i < ve.size(); ++i) {
@@ -421,7 +421,7 @@ int aloneNodeController::nodeIn(vector<aloneNodeController *> ve,int viewNo) {
 }
 
 /**
- * ??msgs?????????????????к??msg
+ * 查看msgs向量中有无对应的序列号的msg
  * @param msgs
  * @param serialNo
  * @return
@@ -436,52 +436,52 @@ bool aloneNodeController::MsgIn(vector<Msg *> msgs, int serialNo) {
 }
 
 /**
- * ??msg???
+ * 广播msg消息
  * @param msg
  */
 void aloneNodeController::sendMsg(Msg* msg) {
     string type=msg->getType();
-    putString(type+"???????????????");
+    putString(type+"类型的数据开始广播了");
     pbftMain::broadcast(msg->toJsonStr());
 }
 
 /**
- * ????reply????
+ * 发送reply给系统
  * @param reply
  * @return
  */
 int aloneNodeController::sendReply(Msg* reply) {
-    putString("???????reply???");
+    putString("开始发送reply消息");
     pbftMain::sendToNode(reply->toJsonStr(), reply->getSystemId());
     return 0;
 }
 
 /**
- * ??msg???????????????????
+ * 将msg存入对应类型的待处理队列
  * @param node
  * @param msg
  */
 void aloneNodeController::pushReadMsg(aloneNodeController*node, Msg* msg) {
 
     string msgType = msg->getType();
-    putString("????????????????????????ж??????????????"+msgType+"??????????????????б?");
+    putString("因为节点还没有收到确认消息，无法判断自己能否处理，所以把"+msgType+"类型的消息放入待处理列表");
     if("request"==msgType){
         requestReadyList.push_back(msg);
-        putString("request??????????????б?,?????С"+to_string(requestReadyList.size()));
+        putString("request消息已放入待处理列表,当前大小"+to_string(requestReadyList.size()));
     }else if("ppMsg"==msgType){
         node->ppMsgReadyList.push_back(msg);
-        putString("pp??????????????б?,?????С"+to_string(node->ppMsgReadyList.size()));
+        putString("pp消息已放入待处理列表,当前大小"+to_string(node->ppMsgReadyList.size()));
     }else if("pMsg"==msgType){
         node->pMsgReadyList.push_back(msg);
-        putString("p??????????????б?,?????С"+to_string(node->pMsgReadyList.size()));
+        putString("p消息已放入待处理列表,当前大小"+to_string(node->pMsgReadyList.size()));
     }else if("commit"==msgType){
         node->cMsgReadyList.push_back(msg);
-        putString("c??????????????б?,?????С"+to_string(node->cMsgReadyList.size()));
+        putString("c消息已放入待处理列表,当前大小"+to_string(node->cMsgReadyList.size()));
     }
 }
 
 /**
- * ???nodes????????delete
+ * 删除nodes里的一半节点并delete
  */
 void aloneNodeController::removeHalfNodes() {
     int nodeSize=nodes.size();
@@ -492,14 +492,14 @@ void aloneNodeController::removeHalfNodes() {
 }
 
 /**
- * ???ppMsg?????????
+ * 检查ppMsg是否符合要求
  * @param ppMsg
  * @return
  */
 bool aloneNodeController::checkPpMsg(Msg* ppMsg) {
 
     if (check(ppMsg)){
-        ////????????????pp???
+        ////检查是否收到重复pp消息
         for (int i = 0; i < ppMsgList.size(); ++i) {
             if (ppMsgList.at(i)==ppMsg->getSerialNo()){
                 return false;
@@ -512,7 +512,7 @@ bool aloneNodeController::checkPpMsg(Msg* ppMsg) {
 }
 
 /**
- * ???pMsg?????????
+ * 检查pMsg是否符合要求
  * @param pMsg
  * @return
  */
@@ -521,7 +521,7 @@ bool aloneNodeController::checkPMsg(Msg* pMsg) {
 }
 
 /**
- * ???cMsg?????????
+ * 检查cMsg是否符合要求
  * @param commit
  * @return
  */
@@ -531,7 +531,7 @@ bool aloneNodeController::checkCMsg(Msg *commit) {
 }
 
 /**
- * ???Msg?????????
+ * 检查Msg是否符合要求
  * @param ppMsg
  * @return
  */
@@ -559,7 +559,7 @@ void aloneNodeController::setViewNo(int viewNo) {
 }
 
 /**
- * ??????
+ * 测试用
  * @param msg
  * @param nodeNo
  */
@@ -568,14 +568,14 @@ void aloneNodeController::getMsg(Msg *msg,int nodeNo) {
 }
 
 /**
- * ??ι?????
+ * 无参构造函数
  */
 aloneNodeController::aloneNodeController() {
 
 }
 
 /**
- * ????????
+ * 析构函数
  */
 aloneNodeController::~aloneNodeController() {
     deleteMsg(ppMsgReadyList);
